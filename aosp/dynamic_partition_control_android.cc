@@ -408,6 +408,16 @@ DynamicPartitionControlAndroid::LoadMetadataBuilder(
                  << super_device;
     return nullptr;
   }
+  // A modded ROM can flash a raw super image before this one. That image
+  // brings its own super table, which can say the super is smaller than it
+  // really is. Flashing an AOSP ROM then fails, because the recorded size is
+  // smaller than the real device and the payload does not fit in it.
+  // So in recovery, grow the recorded size to match the real device size.
+  // It never shrinks.
+  if (IsRecovery() && builder->GrowBlockDevicesToLiveSize(PartitionOpener())) {
+    LOG(INFO) << "Raised recorded super size to the live device size in "
+              << super_device;
+  }
   LOG(INFO) << "Created metadata for new update from slot "
             << BootControlInterface::SlotName(source_slot) << " in "
             << super_device;
